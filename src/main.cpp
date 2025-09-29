@@ -16,22 +16,25 @@ Adafruit_SSD1306 oledRight(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 #define TRIG_PIN 7
 #define ECHO_PIN 6   
 
-// --- Servo tête
+// --- Servos
 Servo servoHead;
+Servo servoArmR;
+const int headPin = 9; 
+const int armRPin = 8; 
 
-// DFPlayer
+// --- DFPlayer
 HardwareSerial& dfSerial = Serial1;   // Mega : TX1=18 → DFPlayer RX, RX1=19 ← DFPlayer TX
 DFRobotDFPlayerMini myDFPlayer;
 //#define DFPLAYER_BUSY_PIN 8    
 
 // --- Seuils
 const int distanceSeuil = 30;
-const unsigned long tempsInactivite = 60000;   // 1 min
+const unsigned long inactivateTime = 30000;   //  30sec
 const unsigned long intervalAnimation = 10000;  // yeux + tête toutes les 10 sec
-const unsigned long dureeMouvement = 1000;     // restent 1 sec avant retour centre
-const unsigned long dureeClignement = 300;     // temps yeux fermés (ms)
+const unsigned long moveTiming = 1000;     // restent 1 sec avant retour centre
+const unsigned long blinkTime = 300;     // temps yeux fermés (ms)
 
-// --- États
+// --- States
 bool isAwake = false;
 bool soundPlaying = false;
 bool isSleeping = false; 
@@ -39,22 +42,11 @@ unsigned long lastActivityTime = 0;
 unsigned long lastMoveTime = 0;
 bool atCenter = true;
 
-// --- Clignement
+// --- Blink
 unsigned long lastBlinkTime = 0;
 unsigned long nextBlinkInterval = 0;
 bool eyesClosed = false;
 
-
-// ---- Fonctions sons ----
-/* void playTrack(int trackNum) {
-  if (!myDFPlayer.available()) return;
-  myDFPlayer.play(trackNum);
-  // attend la fin de lecture
-  while (digitalRead(DFPLAYER_BUSY_PIN) == LOW) {
-    // tu peux ici animer les yeux pendant que ça joue
-    delay(10);
-  }
-} */
 
 void playWakeupSound()   { Serial.println("🔊 Réveil");     myDFPlayer.play(2); }
 void playHelloSound()    { Serial.println("🔊 Bonjour");   myDFPlayer.play(4); }
@@ -75,6 +67,21 @@ long readDistanceCM() {
   return distance;
 }
 
+void liftArm() {
+  Serial.println("🤲 Bras droit levé");
+  servoArmR.write(170);   // 170° = bras levé vers l'avant
+}
+
+void lowerArm() {
+  Serial.println("🤲 Bras droit baissé");
+  servoArmR.write(90);    // 90° = bras tout en bas
+}
+
+void resetArm() {
+  Serial.println("🤲 Bras droit neutre");
+  servoArmR.write(135);   // 135° = position repos
+}
+
 void drawEye(Adafruit_SSD1306 &screen, bool open, int offsetX = 0, int offsetY = 0) {
   screen.clearDisplay();
   if (open) {
@@ -88,12 +95,13 @@ void drawEye(Adafruit_SSD1306 &screen, bool open, int offsetX = 0, int offsetY =
 void wakeUp() {
   if (isAwake) {
     Serial.println("⚠️  Déjà réveillé !");
-    return;  // évite d'appeler plusieurs fois
+    return;  // éviter d'appeler plusieurs fois
   }
 
   Serial.println("🤖 RÉVEIL !");
   
   playWakeupSound();
+  delay(2000);
   drawEye(oledLeft, true, 0, 0);
   drawEye(oledRight, true, 0, 0);
 
@@ -117,6 +125,10 @@ void wakeUp() {
   playNameSound();
   delay(2000);
 
+  liftArm();       // bras se lève
+  delay(1000);
+  resetArm();      // bras revient au neutre
+
   // Premier clignement dans 3-8 sec
   nextBlinkInterval = random(3000, 8000);
   lastBlinkTime = millis();
@@ -131,6 +143,10 @@ void sleep() {
   }
 
   Serial.println("😴 SOMMEIL !");
+
+  lowerArm();      // bras se baisse
+  delay(500);
+  resetArm();      // bras neutre (optionnel)
   
   playGoodbyeSound();
   // Attendre que le son se termine complètement
@@ -147,15 +163,15 @@ void sleep() {
 
 
   Serial.println("✅ Sommeil terminé");
-
 }
+
 
 void setup() {
   Serial.begin(115200);
   Serial.println("🚀 Démarrage du robot...");
 
   // --- Servo
-  servoHead.attach(9);
+  servoHead.attach(headPin);
   Serial.println("🔄 Test servo...");
   servoHead.write(0);
   delay(1000);
@@ -165,6 +181,19 @@ void setup() {
   delay(1000);
   servoHead.write(90);
   Serial.println("✅ Test servo terminé");
+
+  // --- Servo bras droit
+  Serial.println("🔄 Test servo bras...");
+  servoArmR.attach(armRPin);
+  servoArmR.write(135);   // 135° = position neutre
+  delay(1000);
+  servoArmR.write(170);   // monte le bras vers l'avant
+  delay(1000);
+  servoArmR.write(90);    // descend le bras
+  delay(1000);
+  servoArmR.write(135);   // retour au neutre
+  delay(500);
+  Serial.println("✅ Test servo bras droit terminé");
 
   // --- OLEDs (bus I2C unique SDA=20, SCL=21)
   Wire.begin();
@@ -184,7 +213,7 @@ void setup() {
 
   // DFPlayer sur Serial1
   dfSerial.begin(9600);
-  //pinMode(DFPLAYER_BUSY_PIN, INPUT);  // BUSY du module branché ici
+  //pinMode(DFPLAYER_BUSY_PIN, INPUT);  // BUSY du module branché
   Serial.println("→ Initialisation DFPlayer…");
   if (!myDFPlayer.begin(dfSerial)) {
     Serial.println("❌ DFPlayer non détecté sur Serial1");
@@ -252,7 +281,7 @@ void loop() {
     }
 
     // Retour yeux + tête au centre après 1 sec
-    if (!atCenter && now - lastMoveTime > dureeMouvement) {
+    if (!atCenter && now - lastMoveTime > moveTiming) {
       drawEye(oledLeft, true, 0, 0);
       drawEye(oledRight, true, 0, 0);
       servoHead.write(90); // tête centre
@@ -270,7 +299,7 @@ void loop() {
       Serial.println("😉 Clignement");
     }
 
-    if (eyesClosed && now - lastBlinkTime > dureeClignement) {
+    if (eyesClosed && now - lastBlinkTime > blinkTime ) {
       drawEye(oledLeft, true, 0, 0);
       drawEye(oledRight, true, 0, 0);
       eyesClosed = false;
@@ -279,7 +308,7 @@ void loop() {
     }
 
     // Sommeil après inactivité
-    if (now - lastActivityTime > tempsInactivite) {
+    if (now - lastActivityTime > inactivateTime) {
       sleep();
     }
   }
