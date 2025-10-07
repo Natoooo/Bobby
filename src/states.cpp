@@ -56,14 +56,18 @@ void RobotStates::wakeUp() {
   // Sons de présentation
   sounds.playHello();
   delay(500);
-  // Geste du bras
-  movements.armLift();
+
+  // Geste des bras
+  movements.armLeftLift();
+  movements.armRightNeutral();
   delay(500);
-  movements.armNeutral();
+  movements.armLeftNeutral();
+  movements.armRightDown();
   delay(500);
+
   sounds.playName();
   delay(500);
-  movements.armDown();
+  movements.armLeftDown();
   delay(500);
 
   // Préparer clignements
@@ -81,11 +85,14 @@ void RobotStates::sleep() {
   Serial.println("😴 SOMMEIL !");
 
   // Bras se baisse
-  movements.armDown();
+  movements.armLeftDown();
+  movements.armRightDown();
   delay(500);
-  movements.armLift();
+  movements.armLeftLift();
+  movements.armRightNeutral();
   delay(500);
-  movements.armDown();
+  movements.armLeftDown();
+  movements.armRightDown();
 
   // Son d'au revoir
   sounds.playGoodbye();

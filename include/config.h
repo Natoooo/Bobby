@@ -13,6 +13,7 @@
 // Servos
 #define SERVO_HEAD_PIN 9
 #define SERVO_ARM_R_PIN 8
+#define SERVO_ARM_L_PIN 10 
 
 // --- ÉCRANS OLED ---
 #define SCREEN_WIDTH 128
@@ -37,9 +38,14 @@
 #define HEAD_LOOK_RIGHT 110
 
 // Bras droit
-#define ARM_DOWN 135     // Bras baissé
-#define ARM_NEUTRAL 155  // Position repos
-#define ARM_LIFTED 180   // Bras levé (ajustez entre 90-110)
+#define ARM_R_DOWN 135     // Bras baissé
+#define ARM_R_NEUTRAL 155  // Position repos
+#define ARM_R_LIFTED 180   // Bras levé
+
+// Bras gauche
+#define ARM_L_DOWN 120    // Bras baissé
+#define ARM_L_NEUTRAL 90 // Position repos
+#define ARM_L_LIFTED 10  // Bras levé  
 
 // --- DFPLAYER ---
 #define DFPLAYER_VOLUME 20

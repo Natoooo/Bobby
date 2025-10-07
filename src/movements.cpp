@@ -8,10 +8,12 @@ Movements::Movements() {
 void Movements::begin() {
   servoHead.attach(SERVO_HEAD_PIN);
   servoArmR.attach(SERVO_ARM_R_PIN);
+  servoArmL.attach(SERVO_ARM_L_PIN); 
   
   // Position initiale
   headCenter();
-  armNeutral();
+  armRightNeutral();
+  armLeftNeutral(); 
   
   Serial.println("✅ Servos initialisés");
 }
@@ -27,18 +29,27 @@ void Movements::testServos() {
   servoHead.write(HEAD_CENTER);
   Serial.println("✅ Test tête terminé");
   
-  Serial.println("🔄 Test servo bras...");
-  servoArmR.write(ARM_DOWN);
+  Serial.println("🔄 Test servo bras droit...");
+  servoArmR.write(ARM_R_NEUTRAL);
   delay(1000);
-  servoArmR.write(ARM_NEUTRAL);
+  servoArmR.write(ARM_R_LIFTED);
   delay(1000);
-  servoArmR.write(ARM_LIFTED);
+  servoArmR.write(ARM_R_NEUTRAL);
   delay(1000);
-  servoArmR.write(ARM_NEUTRAL);
-  delay(1000);
-  servoArmR.write(ARM_DOWN);
+  servoArmR.write(ARM_R_DOWN);
   delay(500);
-  Serial.println("✅ Test bras terminé");
+  Serial.println("✅ Test bras droit terminé");
+
+  Serial.println("🔄 Test servo bras gauche...");
+  servoArmL.write(ARM_L_NEUTRAL);
+  delay(1000);
+  servoArmL.write(ARM_L_LIFTED);
+  delay(1000);
+  servoArmL.write(ARM_L_NEUTRAL);
+  delay(1000);
+  servoArmL.write(ARM_L_DOWN);
+  delay(500);
+  Serial.println("✅ Test bras gaucheterminé");
 }
 
 // --- TÊTE ---
@@ -63,17 +74,33 @@ void Movements::headLookRight() {
 }
 
 // --- BRAS DROIT ---
-void Movements::armLift() {
+void Movements::armRightLift() {
   Serial.println("🤲 Bras droit levé");
-  servoArmR.write(ARM_LIFTED);
+  servoArmR.write(ARM_R_LIFTED);
 }
 
-void Movements::armDown() {
+void Movements::armRightDown() {
   Serial.println("🤲 Bras droit baissé");
-  servoArmR.write(ARM_DOWN);
+  servoArmR.write(ARM_R_DOWN);
 }
 
-void Movements::armNeutral() {
+void Movements::armRightNeutral() {
   Serial.println("🤲 Bras droit neutre");
-  servoArmR.write(ARM_NEUTRAL);
+  servoArmR.write(ARM_R_NEUTRAL);
+}
+
+// --- BRAS GAUCHE ---
+void Movements::armLeftLift() {
+  Serial.println("🤲 Bras gauche levé");
+  servoArmL.write(ARM_L_LIFTED);
+}
+
+void Movements::armLeftDown() {
+  Serial.println("🤲 Bras gauche baissé");
+  servoArmL.write(ARM_L_DOWN);
+}
+
+void Movements::armLeftNeutral() {
+  Serial.println("🤲 Bras gauche neutre");
+  servoArmL.write(ARM_L_NEUTRAL);
 }

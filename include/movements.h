@@ -23,13 +23,20 @@ public:
   void headLookRight();
   
   // Bras droit
-  void armLift();
-  void armDown();
-  void armNeutral();
+  void armRightLift();
+  void armRightDown();
+  void armRightNeutral();
   
+    // Bras gauche
+  void armLeftLift();
+  void armLeftDown();
+  void armLeftNeutral();
+
+
 private:
   Servo servoHead;
   Servo servoArmR;
+  Servo servoArmL; 
 };
 
 #endif
